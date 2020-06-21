@@ -1,0 +1,73 @@
+---
+# tasks file for ansible-role-postfix
+- name: Create group
+  group: 
+    name: vmail
+    gid: 2000
+    state: present
+
+- name: Create user
+  user:
+    name: vmail
+    comment: Virtual mail user
+    uid: 2000
+    group: vmail
+
+- name: Install packages
+  package:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - postfix
+    - postfix-mysql
+
+- name: Create directories
+  file:
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    state: directory
+    mode: "{{ item.mode }}"
+  with_items:
+    - { dest: /var/spool/postfix/etc/pam.d, owner: root, group: root, mode: "0755" }
+    - { dest: /var/spool/postfix/var/run/mysqld, owner: root, group: root, mode: "0755" }
+    - { dest: /var/customers/mail/, owner: 2000, group: 2000, mode: "0750" }
+  
+- name: Copy postfix configuration files
+  copy: 
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}" 
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+    backup: yes
+  with_items:
+    - { src: master.cf, dest: /etc/postfix/master.cf, owner: root, group: root, mode: "0644" }  
+
+- name: Copy postfix template configuration
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}" 
+    owner: "{{ item.owner }}" 
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  with_items:
+    - { src: main.cf, dest: /etc/postfix/main.cf, owner: root, group: root, mode: "0644" }
+    - { src: mysql-virtual_alias_maps.cf, dest: /etc/postfix/mysql-virtual_alias_maps.cf, owner: root, group: postfix, mode: "0640" }
+    - { src: mysql-virtual_mailbox_domains.cf, dest: /etc/postfix/mysql-virtual_mailbox_domains.cf, owner: root, group: postfix, mode: "0640" }
+    - { src: mysql-virtual_mailbox_maps.cf, dest: /etc/postfix/mysql-virtual_mailbox_maps.cf, owner: root, group: postfix, mode: "0640" }
+    - { src: mysql-virtual_sender_permissions.cf, dest: /etc/postfix/mysql-virtual_sender_permissions.cf, owner: root, group: postfix, mode: "0640" }
+    - { src: mysql-virtual_uid_maps.cf, dest: /etc/postfix/mysql-virtual_uid_maps.cf, owner: root, group: postfix, mode: "0640" }
+    - { src: mysql-virtual_gid_maps.cf, dest: /etc/postfix/mysql-virtual_gid_maps.cf, owner: root, group: postfix, mode: "0640" }
+    - { src: aliases, dest: /etc/aliases, owner: root, group: root, mode: "0644" }
+  notify:
+    - rebuild aliases
+    - restart postfix
+
+- name: Create a job to reload postfix
+  cron:
+    name: "Reload postfix"
+    hour: "2"
+    user: root
+    job: "/usr/sbin/service postfix reload"

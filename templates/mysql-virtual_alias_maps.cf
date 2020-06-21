@@ -1,0 +1,5 @@
+user = {{ froxlor_mysql_user }} 
+password = {{ froxlor_mysql_password }}
+dbname = {{ froxlor_mysql_db }} 
+hosts = 127.0.0.1
+query = SELECT destination FROM mail_virtual AS v, panel_customers AS c WHERE c.customerid = v.customerid AND c.deactivated = 0 AND v.email = '%s' AND trim(v.destination) <> ''

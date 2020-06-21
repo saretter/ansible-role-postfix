@@ -1,0 +1,5 @@
+user = {{ froxlor_mysql_user }} 
+password = {{ froxlor_mysql_password }}
+dbname = {{ froxlor_mysql_db }} 
+hosts = 127.0.0.1
+query = SELECT domain FROM panel_domains WHERE domain = '%s' AND isemaildomain = '1'

@@ -1,0 +1,6 @@
+user = {{ froxlor_mysql_user }} 
+password = {{ froxlor_mysql_password }}
+dbname = {{ froxlor_mysql_db }} 
+expansion_limit = 1
+hosts = 127.0.0.1
+query = SELECT uid FROM mail_users WHERE email = '%s'
